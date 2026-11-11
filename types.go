@@ -182,8 +182,8 @@ type CalendarItem struct {
 	// (ln(1+max)/ln(1+1000), major units, not currency-converted).
 	// Cancelled events score 0.
 	Prominence float64 `json:"prominence"`
-	// The event's on-sale heat (§12), 0–100, recomputed by the metrics role
-	// every sweep for listed upcoming events with an on-sale or presale
+	// The event's on-sale heat, 0–100, recomputed on every metrics refresh
+	// for listed upcoming events with an on-sale or presale
 	// starting in the last 7 days or later; null for other events. A weighted
 	// mean of component scores (weights renormalised over the known ones):
 	// 30% the median secondary spread of the reference events (+100% = full),

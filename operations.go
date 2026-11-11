@@ -15,7 +15,7 @@ import (
 //
 // Returns a single-use ticket, valid for 60 s, for opening the realtime
 // stream from a browser: `GET /v1/stream?ticket=<ticket>` (WebSocket,
-// protocol in api/asyncapi.yaml). Long-lived credentials never appear
+// protocol: https://status302.com/docs/stream/). Long-lived credentials never appear
 // in URLs. The connection acts as the caller; ending the session (or
 // revoking the API key) closes it with 4401. With an API key (backends
 // handing tickets to their own browser clients) the key needs the
@@ -1226,7 +1226,7 @@ func (p *ListSalesFeedParams) values() url.Values {
 // Marketplace scopes need secondary marketplaces: left out without
 // `scope`, 402 when asked for. Every confidence is included unless
 // `confidence` narrows it. Live updates arrive on the `sales` stream
-// topic (docs/stream-topics.md).
+// topic (https://status302.com/docs/stream/#topics).
 //
 // **API key scope:** `sales:read`.
 //
@@ -1926,7 +1926,7 @@ func (c *Client) ListCalendarItemsAll(ctx context.Context, params *ListCalendarI
 
 // GetSeatmap calls GET /v1/seatmaps/{hash}: Seat map artifact.
 //
-// The compiled `.tmap` artifact (byte layout in docs/seatmap-format.md),
+// The compiled `.tmap` seat map artifact,
 // addressed by the SHA-256 of its uncompressed bytes and therefore
 // immutable. Sent brotli-compressed (`Content-Encoding: br`) when the
 // request accepts `br`, uncompressed otherwise. The ETag is the hash.
@@ -3166,10 +3166,8 @@ func (c *Client) ListExportsAll(ctx context.Context, params *ListExportsParams, 
 // Scopes: `catalog:read` for events and lists, `sales:read` for sales,
 // `market:read` for series. Rows are capped by the plan's export limit
 // and, on every plan, by 1,000,000 rows and 256 MiB per file
-// (`STATUS302_EXPORTS_MAX_ROWS`, `STATUS302_EXPORTS_MAX_BYTES`;
-// `truncated` tells). An org may have 3 exports queued or running
-// (`STATUS302_EXPORTS_MAX_ACTIVE`); another is answered 429 (`limit`
-// `concurrent`) with Retry-After.
+// (`truncated` tells). An org may have 3 exports queued or running;
+// another is answered 429 (`limit` `concurrent`) with Retry-After.
 //
 // **API key scope:** `catalog:read`.
 func (c *Client) CreateExport(ctx context.Context, body *ExportInput, opts ...RequestOption) (*Export, error) {
