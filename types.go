@@ -219,7 +219,6 @@ type CalendarEvent struct {
 	Venue     *VenueRef   `json:"venue,omitempty"`
 	// The event's attractions in billing order.
 	Attractions []AttractionRef `json:"attractions"`
-	ImageURL    *string         `json:"imageUrl"`
 	// A compiled seat map is linked to the event.
 	HasSeatMap bool `json:"hasSeatMap"`
 	// Declared places of the compiled seat map: seats plus GA capacity (the larger of
@@ -267,7 +266,7 @@ type Seatmap struct {
 	// (`Content-Encoding: br`), immutable, readable cross-origin
 	// without credentials. Prefer it to `url` when present.
 	CdnURL *string `json:"cdnUrl,omitempty"`
-	// .tmap format version.
+	// .tmap format version (2; format 1 artifacts were deleted and are no longer served).
 	Format        int    `json:"format"`
 	VenueConfigID string `json:"venueConfigId"`
 	PageWidth     int    `json:"pageWidth"`
@@ -960,7 +959,6 @@ type EventSummary struct {
 	Genre           *string     `json:"genre"`
 	PublicSaleStart *time.Time  `json:"publicSaleStart"`
 	PriceRange      *PriceRange `json:"priceRange,omitempty"`
-	ImageURL        *string     `json:"imageUrl"`
 	// When the catalog first saw the event.
 	FirstSeenAt time.Time `json:"firstSeenAt"`
 	// Set when a complete sweep no longer found the event in Discovery.
@@ -1090,7 +1088,6 @@ type SearchEvent struct {
 	Timezone  *string     `json:"timezone"`
 	Status    EventStatus `json:"status"`
 	Venue     *VenueRef   `json:"venue,omitempty"`
-	ImageURL  *string     `json:"imageUrl"`
 	// Not started yet, or undated.
 	Upcoming bool `json:"upcoming"`
 }
@@ -1101,7 +1098,6 @@ type SearchAttraction struct {
 	Name           string  `json:"name"`
 	Segment        *string `json:"segment"`
 	Genre          *string `json:"genre"`
-	ImageURL       *string `json:"imageUrl"`
 	UpcomingEvents int     `json:"upcomingEvents"`
 }
 
@@ -1188,7 +1184,6 @@ type AttractionDetail struct {
 	Name        string `json:"name"`
 	// Ticketmaster attraction page.
 	URL             *string          `json:"url"`
-	ImageURL        *string          `json:"imageUrl"`
 	Segment         *string          `json:"segment"`
 	Genre           *string          `json:"genre"`
 	Subgenre        *string          `json:"subgenre"`
@@ -1253,7 +1248,6 @@ type VenueDetail struct {
 	PrimarySource *PrimarySource `json:"primarySource"`
 	Name          string         `json:"name"`
 	URL           *string        `json:"url"`
-	ImageURL      *string        `json:"imageUrl"`
 	Address       *string        `json:"address"`
 	City          *string        `json:"city"`
 	StateCode     *string        `json:"stateCode"`
@@ -1626,7 +1620,6 @@ type SaleEventRef struct {
 	Venue    *string    `json:"venue"`
 	City     *string    `json:"city"`
 	Country  *string    `json:"country"`
-	ImageURL *string    `json:"imageUrl"`
 }
 
 // SalePage is a schema of the public API.
@@ -1782,7 +1775,6 @@ type PredictionEvent struct {
 	Status    string     `json:"status"`
 	VenueName *string    `json:"venueName,omitempty"`
 	City      *string    `json:"city,omitempty"`
-	ImageURL  *string    `json:"imageUrl,omitempty"`
 }
 
 // PredictionCall: A scalping call as customers see it (the model's inputs left out).
@@ -2196,7 +2188,6 @@ type SavedListEvent struct {
 	Timezone  *string     `json:"timezone"`
 	Status    EventStatus `json:"status"`
 	Segment   *string     `json:"segment"`
-	ImageURL  *string     `json:"imageUrl"`
 	TmEventID *string     `json:"tmEventId"`
 	// The event's primary seller (`EventSummary.primarySource`).
 	PrimarySource *PrimarySource  `json:"primarySource"`
@@ -2907,7 +2898,8 @@ type AlertPreview struct {
 
 // ChannelKind: `slack_app` channels post as the org's installed Slack app (Settings →
 // Integrations; created with `POST /v1/integrations/slack/workspaces/{teamId}/channels`,
-// not `POST /v1/channels`).
+// not `POST /v1/channels`). `webpush` and `apns` channels are members'
+// own browsers and iOS devices.
 type ChannelKind string
 
 // Values of ChannelKind.
@@ -2920,6 +2912,7 @@ const (
 	ChannelKindTelegram          ChannelKind = "telegram"
 	ChannelKindEmail             ChannelKind = "email"
 	ChannelKindWebpush           ChannelKind = "webpush"
+	ChannelKindApns              ChannelKind = "apns"
 )
 
 // NotificationChannel is a schema of the public API.
@@ -2927,14 +2920,14 @@ type NotificationChannel struct {
 	ID   int64       `json:"id"`
 	Kind ChannelKind `json:"kind"`
 	Name string      `json:"name"`
-	// Non-secret destination hint (webhook host, chat title, address, push service).
+	// Non-secret destination hint (webhook host, chat title, address, push service, APNs environment).
 	Label    string `json:"label"`
 	Verified bool   `json:"verified"`
 	Enabled  bool   `json:"enabled"`
 	// An email code or Telegram link is outstanding.
 	VerificationPending bool       `json:"verificationPending"`
 	VerifyExpiresAt     *time.Time `json:"verifyExpiresAt,omitempty"`
-	// A Web Push channel of the signed-in caller's browser(s); always false for API keys.
+	// A device channel (Web Push browser, iOS device) of the signed-in caller; always false for API keys.
 	Mine        bool       `json:"mine"`
 	LastError   *string    `json:"lastError,omitempty"`
 	LastErrorAt *time.Time `json:"lastErrorAt,omitempty"`

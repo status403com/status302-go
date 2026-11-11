@@ -1926,10 +1926,15 @@ func (c *Client) ListCalendarItemsAll(ctx context.Context, params *ListCalendarI
 
 // GetSeatmap calls GET /v1/seatmaps/{hash}: Seat map artifact.
 //
-// The compiled `.tmap` seat map artifact,
-// addressed by the SHA-256 of its uncompressed bytes and therefore
-// immutable. Sent brotli-compressed (`Content-Encoding: br`) when the
-// request accepts `br`, uncompressed otherwise. The ETag is the hash.
+// The compiled `.tmap` seat map artifact (format 2,
+// docs/seatmap-format.md), addressed by the SHA-256 of its
+// uncompressed bytes and therefore immutable. It holds section names,
+// kinds and capacities, rows, seat positions, seat labels and
+// placeIds, plus section outlines generated from the seats and the
+// sections' extents; it carries no provider artwork and no labels
+// (draw section names yourself). Sent brotli-compressed
+// (`Content-Encoding: br`) when the request accepts `br`,
+// uncompressed otherwise. The ETag is the hash.
 //
 // Conditional: with WithIfNoneMatch(etag) the call fails with ErrNotModified (*NotModifiedError) while the representation still has that ETag.
 func (c *Client) GetSeatmap(ctx context.Context, hash string, opts ...RequestOption) ([]byte, error) {
