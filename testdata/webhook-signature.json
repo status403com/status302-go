@@ -1,0 +1,6 @@
+{
+  "secret": "whsec_5Wq9Xr2LmT8vKz3NcB7yHd4FgJ1pQs6Ua0eRtYiOoPl",
+  "timestamp": 1793836800,
+  "body": "{\"id\":\"0b9d7c1e-2f4a-4d6b-9e8f-1a2b3c4d5e6f\",\"type\":\"list.sale\",\"createdAt\":\"2026-11-05T00:00:00Z\",\"test\":true,\"data\":{\"eventId\":46,\"qty\":2,\"priceMinor\":13510,\"currency\":\"USD\"}}",
+  "header": "t=1793836800,v1=8019560260f87052f8bc68db28a88f26c757d1d2cfa129b6bbe68bb47184f79a"
+}
