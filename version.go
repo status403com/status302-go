@@ -4,4 +4,4 @@ package status302
 
 // Version is the API spec version this SDK was generated from; releases of
 // the module share its major and minor version.
-const Version = "1.6.0"
+const Version = "1.7.0"

@@ -301,6 +301,17 @@ func (c *Client) GetCatalogFacets(ctx context.Context, opts ...RequestOption) (*
 // GetEvent calls GET /v1/events/{id}: Event detail.
 //
 // One catalog event including its public on-sale and presale windows.
+// Reading an event (this operation or one of its own sub-resources:
+// map, overlay, sections, price levels, offers, ticket types,
+// listings, inventory and listing changes, metrics, series, sales)
+// keeps it checked hourly for 24 hours after the read (and its search
+// at marketplaces not linked yet every 6 hours) and refreshes
+// data older than 10 minutes in the background; the response is not
+// delayed and fresh data arrives over the event's stream topics. Each
+// organization heats at most its plan's hot events per rolling day;
+// further events are served without heating. Batch reads
+// (`GET /v1/events?ids=`, `listId`), catalog, search and exports do not
+// heat.
 //
 // **API key scope:** `catalog:read`.
 //
@@ -1926,8 +1937,8 @@ func (c *Client) ListCalendarItemsAll(ctx context.Context, params *ListCalendarI
 
 // GetSeatmap calls GET /v1/seatmaps/{hash}: Seat map artifact.
 //
-// The compiled `.tmap` seat map artifact (format 2,
-// docs/seatmap-format.md), addressed by the SHA-256 of its
+// The compiled `.tmap` seat map artifact (format 2), addressed by the
+// SHA-256 of its
 // uncompressed bytes and therefore immutable. It holds section names,
 // kinds and capacities, rows, seat positions, seat labels and
 // placeIds, plus section outlines generated from the seats and the

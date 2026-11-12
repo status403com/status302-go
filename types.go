@@ -879,15 +879,20 @@ const (
 	EventLifecycleArchived   EventLifecycle = "archived"
 )
 
-// EventTier: Polling tier: `watched` (in scope of an enabled market alert rule,
-// polled about every 30 s), `standard` (on sale, about hourly) or
-// `dormant` (not polled: not on sale yet, ended, cancelled, or without
-// a pollable source).
+// EventTier: Checking tier: `watched` (in scope of an enabled market alert rule,
+// checked about every 15 minutes until it starts), `hot` (read in the
+// last 24 hours; about hourly), `standard` (on sale: every 3 hours on
+// its on-sale day and in the 48 hours before it starts, otherwise
+// about daily, less often for events far out or without market
+// activity) or `dormant` (not checked: not
+// on sale yet, ended, cancelled, not a show, or without a pollable
+// source).
 type EventTier string
 
 // Values of EventTier.
 const (
 	EventTierWatched  EventTier = "watched"
+	EventTierHot      EventTier = "hot"
 	EventTierStandard EventTier = "standard"
 	EventTierDormant  EventTier = "dormant"
 )
@@ -1936,7 +1941,7 @@ type MustCopRelease struct {
 	City      *string    `json:"city,omitempty"`
 	// The public on-sale start.
 	OnSaleAt time.Time `json:"onSaleAt"`
-	// When the primary market was seen sold out, at most two hours after `onSaleAt` (before it: sold out in a presale); absent when it was still on sale then. Unwatched events are checked hourly, so this is an upper bound.
+	// When the primary market was seen sold out, at most two hours after `onSaleAt` (before it: sold out in a presale); absent when it was still on sale then. Events are checked every 3 hours on their on-sale day (hourly when read, every 15 minutes when an alert watches them), so this is an upper bound.
 	SoldOutAt *time.Time `json:"soldOutAt,omitempty"`
 }
 
