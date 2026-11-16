@@ -59,12 +59,12 @@ type ListEventsParams struct {
 	// Only events with (`true`) or without (`false`) a compiled seat map.
 	HasMap *bool
 	// Comma-separated sources the event must be available at, all of them:
-	// `tm` (hosted on Ticketmaster), `dice` (a Dice event) and marketplaces
+	// `tm` (hosted on Ticketmaster), `dice` (a Dice event), `axs` (an AXS event) and marketplaces
 	// (`stubhub` — StubHub & viagogo, `crowdvolt`, `tickpick`, `vividseats`, `ticombo` — Ticombo, `tmresale` — Ticketmaster resale listings, the `tm_resale` market) with a linked listing.
 	Sources []string
 	// Comma-separated statuses to include.
 	Status []EventStatus
-	// Only events of this primary seller (`EventSummary.primarySource`): `tm` for events hosted on Ticketmaster, `dice` for Dice's own events.
+	// Only events of this primary seller (`EventSummary.primarySource`): `tm` for events hosted on Ticketmaster, `dice` for Dice's own events, `axs` for AXS's own events.
 	PrimarySource *PrimarySource
 	// Only events hosted on Ticketmaster (with a `tmEventId`). Same as `primarySource=tm`, which replaces it; 400 together with another `primarySource`.
 	TmOnly *bool
@@ -1648,6 +1648,82 @@ func (c *Client) GetAttractionHistory(ctx context.Context, id int64, params *Get
 	return &out, nil
 }
 
+// ListVenuesParams holds the query parameters of ListVenues.
+type ListVenuesParams struct {
+	// Venue name filter.
+	Q *string
+	// Venue country (ISO 3166-1 alpha-2).
+	Country *string
+	// Opaque `nextCursor` of the previous page.
+	Cursor *string
+	Limit  *int
+}
+
+func (p *ListVenuesParams) values() url.Values {
+	q := url.Values{}
+	if p == nil {
+		return q
+	}
+	if p.Q != nil {
+		q.Set("q", *p.Q)
+	}
+	if p.Country != nil {
+		q.Set("country", *p.Country)
+	}
+	if p.Cursor != nil {
+		q.Set("cursor", *p.Cursor)
+	}
+	if p.Limit != nil {
+		q.Set("limit", strconv.Itoa(*p.Limit))
+	}
+	return q
+}
+
+// ListVenues calls GET /v1/venues: Venue directory.
+//
+// Every catalog venue, most upcoming events (not started, or undated)
+// first, then by name and id, with cursor pagination. `q` filters by
+// name, compared folded like `searchCatalog` (lower case, accents and
+// punctuation removed, `&` = `and`): by substring, or by name and word
+// prefix for queries shorter than three characters; a query that folds
+// to nothing matches no venue. The upcoming event counts (and so the
+// order) are refreshed every few minutes; `nextStartsAt` is live.
+//
+// **API key scope:** `catalog:read`.
+//
+// Conditional: with WithIfNoneMatch(etag) the call fails with ErrNotModified (*NotModifiedError) while the representation still has that ETag.
+func (c *Client) ListVenues(ctx context.Context, params *ListVenuesParams, opts ...RequestOption) (*VenueDirectory, error) {
+	var out VenueDirectory
+	if err := c.do(ctx, http.MethodGet, "/v1/venues", params.values(), nil, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListVenuesPages iterates the pages of ListVenues, following nextCursor as cursor until the last page.
+func (c *Client) ListVenuesPages(ctx context.Context, params *ListVenuesParams, opts ...RequestOption) iter.Seq2[*VenueDirectory, error] {
+	var p ListVenuesParams
+	if params != nil {
+		p = *params
+	}
+	return pages(func() (*VenueDirectory, error) { return c.ListVenues(ctx, &p, opts...) }, func(page *VenueDirectory) bool {
+		if page.NextCursor == nil {
+			return false
+		}
+		next := string(*page.NextCursor)
+		if next == "" {
+			return false
+		}
+		p.Cursor = new(next)
+		return true
+	})
+}
+
+// ListVenuesAll iterates every item of ListVenues across pages.
+func (c *Client) ListVenuesAll(ctx context.Context, params *ListVenuesParams, opts ...RequestOption) iter.Seq2[VenueSummary, error] {
+	return items(c.ListVenuesPages(ctx, params, opts...), func(page *VenueDirectory) []VenueSummary { return page.Items })
+}
+
 // GetVenue calls GET /v1/venues/{id}: Venue detail.
 //
 // One venue with its address and location, a rollup of its catalog events
@@ -1747,7 +1823,7 @@ type ListCalendarDaysParams struct {
 	Country *string
 	// Region code (`GET /v1/regions`); only venues in one of its countries. With `country`, both apply.
 	Region *string
-	// Only events of this primary seller (`CalendarEvent.primarySource`): `tm` for events hosted on Ticketmaster, `dice` for Dice's own events.
+	// Only events of this primary seller (`CalendarEvent.primarySource`): `tm` for events hosted on Ticketmaster, `dice` for Dice's own events, `axs` for AXS's own events.
 	PrimarySource *PrimarySource
 	// Only events hosted on Ticketmaster (with a `tmEventId`). Same as `primarySource=tm`, which replaces it; 400 together with another `primarySource`.
 	TmOnly *bool
@@ -1835,7 +1911,7 @@ type ListCalendarItemsParams struct {
 	Country *string
 	// Region code (`GET /v1/regions`); only venues in one of its countries. With `country`, both apply.
 	Region *string
-	// Only events of this primary seller (`CalendarEvent.primarySource`): `tm` for events hosted on Ticketmaster, `dice` for Dice's own events.
+	// Only events of this primary seller (`CalendarEvent.primarySource`): `tm` for events hosted on Ticketmaster, `dice` for Dice's own events, `axs` for AXS's own events.
 	PrimarySource *PrimarySource
 	// Only events hosted on Ticketmaster (with a `tmEventId`). Same as `primarySource=tm`, which replaces it; 400 together with another `primarySource`.
 	TmOnly *bool

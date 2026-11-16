@@ -582,13 +582,14 @@ type TicketTypeChange struct {
 	Waitlist       *bool                `json:"waitlist"`
 }
 
-// PrimarySource: An event's primary seller: `tm` (Ticketmaster-hosted) or a primary source with its own catalog (`dice`).
+// PrimarySource: An event's primary seller: `tm` (Ticketmaster-hosted) or a primary source with its own catalog (`dice`, `axs`).
 type PrimarySource string
 
 // Values of PrimarySource.
 const (
 	PrimarySourceTm   PrimarySource = "tm"
 	PrimarySourceDice PrimarySource = "dice"
+	PrimarySourceAxs  PrimarySource = "axs"
 )
 
 // OverlaySection is a schema of the public API.
@@ -883,7 +884,7 @@ const (
 // checked about every 15 minutes until it starts), `hot` (read in the
 // last 24 hours; about hourly), `standard` (on sale: every 3 hours on
 // its on-sale day and in the 48 hours before it starts, otherwise
-// about daily, less often for events far out or without market
+// about every 6 hours, less often for events far out or without market
 // activity) or `dormant` (not checked: not
 // on sale yet, ended, cancelled, not a show, or without a pollable
 // source).
@@ -941,7 +942,7 @@ type EventPage struct {
 // EventSummary is a schema of the public API.
 type EventSummary struct {
 	ID int64 `json:"id"`
-	// Ticketmaster Discovery event id; empty for events not listed by Ticketmaster Discovery (e.g. `primarySource` `dice`).
+	// Ticketmaster Discovery event id; empty for events not listed by Ticketmaster Discovery (e.g. `primarySource` `dice` or `axs`).
 	DiscoveryID string `json:"discoveryId"`
 	// Ticketmaster host event id (16 uppercase hex); null for events not hosted on Ticketmaster.
 	TmEventID *string `json:"tmEventId"`
@@ -972,7 +973,7 @@ type EventSummary struct {
 	Tier         EventTier      `json:"tier"`
 	// Whether the event has a compiled seat map.
 	HasMap bool `json:"hasMap"`
-	// Sources the event is available at, sorted (`tm` when hosted on Ticketmaster, `dice` for a Dice event, then marketplaces with a linked listing).
+	// Sources the event is available at, sorted (`tm` when hosted on Ticketmaster, `dice` for a Dice event, `axs` for an AXS event, then marketplaces with a linked listing).
 	AvailableSources []string `json:"availableSources"`
 	// Tickets listed on Ticketmaster resale at the last poll of its listings (0: none listed now). Absent
 	// for events without Ticketmaster resale data (no linked `tmresale` listing, not polled yet) and for
@@ -1035,7 +1036,7 @@ const (
 
 // EventSource is a schema of the public API.
 type EventSource struct {
-	// Marketplace source id (`stubhub` — StubHub and viagogo, one catalogue sold under two brands; `crowdvolt` — CrowdVolt, US Dice and Ticketmaster/AXS music events; `tickpick` — TickPick, the whole US catalogue, all-in prices; `vividseats` — Vivid Seats, the whole US catalogue, pre-fee and all-in prices; `ticombo` — Ticombo, a European marketplace that also lists US events, pre-fee and all-in prices in each seller's currency; `tmresale` — Ticketmaster's fan-to-fan resale listings, US, Canadian, UK and Irish events hosted on Ticketmaster, pre-fee and all-in prices).
+	// Marketplace source id (`stubhub` — StubHub and viagogo, one catalogue sold under two brands; `crowdvolt` — CrowdVolt, US Dice, AXS and Ticketmaster music events; `tickpick` — TickPick, the whole US catalogue, all-in prices; `vividseats` — Vivid Seats, the whole US catalogue, pre-fee and all-in prices; `ticombo` — Ticombo, a European marketplace that also lists US events, pre-fee and all-in prices in each seller's currency; `tmresale` — Ticketmaster's fan-to-fan resale listings, events hosted on Ticketmaster in the US, Canada, the UK, Ireland, Poland, Spain, Czechia, the Netherlands, Austria, Belgium, Germany, Denmark, Norway, Sweden, Finland and Switzerland, pre-fee and all-in prices in the selling site's currency).
 	Source string `json:"source"`
 	// The marketplace's event id.
 	ExternalID string `json:"externalId"`
@@ -1047,7 +1048,11 @@ type EventSource struct {
 	// `https://www.tickpick.com/buy-tickets/{externalId}/`. For `vividseats`,
 	// `https://www.vividseats.com/tickets/production/{externalId}`. For `ticombo`,
 	// the event page found by the search (no URL form opens an id alone). For `tmresale`,
-	// `https://www.ticketmaster.com/event/{externalId}`.
+	// the event's page on the Ticketmaster site selling it, which a prefix of
+	// `externalId` names: `https://www.ticketmaster.com/event/{externalId}`
+	// without one, `https://www.ticketmaster.co.uk/event/{id}` for `uk:{id}`, and
+	// likewise `ie:` and the European sites (`de:1385439776` →
+	// `https://www.ticketmaster.de/event/1385439776`).
 	URL    *string           `json:"url"`
 	Status EventSourceStatus `json:"status"`
 	// `exact`: the marketplace reported the event's own id (its TM event id, or the Dice event id of a Dice event); `auto`: matched by score; `manual`: linked by staff.
@@ -1243,13 +1248,33 @@ type VenueConfig struct {
 	Seatmaps []VenueSeatmap `json:"seatmaps"`
 }
 
+// VenueDirectory is a schema of the public API.
+type VenueDirectory struct {
+	Items []VenueSummary `json:"items"`
+	// Cursor of the next page; null on the last page.
+	NextCursor *string `json:"nextCursor"`
+}
+
+// VenueSummary is a schema of the public API.
+type VenueSummary struct {
+	ID          int64   `json:"id"`
+	Name        string  `json:"name"`
+	City        *string `json:"city"`
+	StateCode   *string `json:"stateCode"`
+	CountryCode *string `json:"countryCode"`
+	// Catalog events not started (or undated), as of the directory's last refresh (every few minutes).
+	UpcomingEvents int `json:"upcomingEvents"`
+	// Start of the venue's next catalog event; null when none is dated.
+	NextStartsAt *time.Time `json:"nextStartsAt"`
+}
+
 // VenueDetail is a schema of the public API.
 type VenueDetail struct {
 	ID int64 `json:"id"`
-	// Ticketmaster Discovery venue id; empty for venues not listed by Ticketmaster Discovery (e.g. Dice venues).
+	// Ticketmaster Discovery venue id; empty for venues not listed by Ticketmaster Discovery (e.g. Dice and AXS venues).
 	DiscoveryID string `json:"discoveryId"`
 	// The seller whose catalog lists the venue, and whose site `url` opens: `tm` for Ticketmaster
-	// Discovery venues, `dice` for Dice venues.
+	// Discovery venues, `dice` for Dice venues, `axs` for AXS venues.
 	PrimarySource *PrimarySource `json:"primarySource"`
 	Name          string         `json:"name"`
 	URL           *string        `json:"url"`
@@ -1696,7 +1721,7 @@ type SalesSummary struct {
 // SalesMarketTotal is a schema of the public API.
 type SalesMarketTotal struct {
 	Scope MetricScope `json:"scope"`
-	// Whether the scope's sales are collected in the requested `country` or `region` (and `segment`) at all. False when no source covers them, e.g. `tm_resale` outside the US, Canada, the UK and Ireland: its zeros then mean not collected, not no sales. Always true without a country or region.
+	// Whether the scope's sales are collected in the requested `country` or `region` (and `segment`) at all. False when no source covers them, e.g. `tm_resale` in Australia or Portugal: its zeros then mean not collected, not no sales. Always true without a country or region.
 	Tracked bool `json:"tracked"`
 	// Settled sales (rows of the feed).
 	Sales int `json:"sales"`
