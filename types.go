@@ -2013,19 +2013,37 @@ type SavedListRef struct {
 	ItemCount int    `json:"itemCount"`
 }
 
+// SavedListManagedBy: Set when the app keeps the list itself: `sales` is the Sales
+// Manager list, one item per event of the org's accepted tickets,
+// with their quantity held and average cost per ticket. Its items
+// cannot be added, changed or removed, and the list cannot be
+// deleted (409); its name and view can be changed.
+type SavedListManagedBy string
+
+// Values of SavedListManagedBy.
+const (
+	SavedListManagedBySales SavedListManagedBy = "sales"
+)
+
 // SavedList: An org's saved list of events (spreadsheet source) and its saved view.
 type SavedList struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	// The creator; null when their account is gone.
+	// The creator; null when their account is gone, and for a managed list (`managedBy`).
 	Owner     *UserRef      `json:"owner"`
 	ItemCount int           `json:"itemCount"`
 	View      SavedListView `json:"view"`
-	// Whether the caller may delete it (creator or org admin).
-	CanDelete bool      `json:"canDelete"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	// Whether the caller may delete it (creator or org admin; never for a managed list).
+	CanDelete bool `json:"canDelete"`
+	// Set when the app keeps the list itself: `sales` is the Sales
+	// Manager list, one item per event of the org's accepted tickets,
+	// with their quantity held and average cost per ticket. Its items
+	// cannot be added, changed or removed, and the list cannot be
+	// deleted (409); its name and view can be changed.
+	ManagedBy *SavedListManagedBy `json:"managedBy,omitempty"`
+	CreatedAt time.Time           `json:"createdAt"`
+	UpdatedAt time.Time           `json:"updatedAt"`
 }
 
 // SavedListList is a schema of the public API.
