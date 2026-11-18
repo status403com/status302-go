@@ -156,6 +156,10 @@ Verify over the raw body before parsing it; pass several secrets while rotating.
 
 Releases share the major and minor version of the API spec they were generated from (`status302.Version`); `/v1` changes are additive only, so new fields, operations and enum values arrive in minor releases. See the [changelog](https://status302.com/docs/changelog/).
 
+## Built by status403
+
+Status302 and this SDK are built and run by [status403](https://status403.com/?utm_source=github&utm_medium=referral&utm_campaign=status302-go), a software house specializing in web scraping, data pipelines and reverse engineering.
+
 ## License
 
 [MIT](LICENSE)
